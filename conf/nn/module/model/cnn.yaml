@@ -1,0 +1,2 @@
+_target_: lightningsparseinst.modules.module.CNN
+input_shape: ${nn.data.dataset.input_shape}
