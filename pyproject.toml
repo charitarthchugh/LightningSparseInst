@@ -34,10 +34,24 @@ add-ignore = ['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D106', 'D107']
 [tool.bandit]
 skips = ["B101"]
 
-[tool.setuptools_scm]
-write_to = "src/lightningsparseinst/_version.py"
-write_to_template = '__version__ = "{version}"'
+[tool.poetry]
+name = "lightningsparseinst"
+version = "0.1.0"
+description = "SparseInst (CVPR 2022) in PyTorch Lightning"
+authors = ["Charitarth Chugh <charitarth.chughg@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+nn-template-core = "^0.4.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.4"
+isort = "^5.13.2"
+tqdm = "^4.66.5"
+cruft = "^2.15.0"
 
 [build-system]
-requires = ["setuptools==59.5", "wheel", "setuptools_scm[toml]>=6.3.1"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
