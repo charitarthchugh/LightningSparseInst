@@ -10,21 +10,9 @@ exclude_lines = [
     "pragma: nocover",
     "if __name__ == .__main__.:",
 ]
-
-[tool.black]
-line-length = 120
-include = '\.pyi?$'
-
 [tool.mypy]
-files= ["src/**/*.py", "test/*.py"]
+files = ["src/**/*.py", "test/*.py"]
 ignore_missing_imports = true
-
-[tool.isort]
-profile = 'black'
-line_length = 120
-known_third_party = ["numpy", "pytest", "wandb", "torch"]
-known_first_party = ["nn_core"]
-known_local_folder = "lightningsparseinst"
 
 [tool.pydocstyle]
 convention = 'google'
@@ -33,6 +21,25 @@ add-ignore = ['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D106', 'D107']
 
 [tool.bandit]
 skips = ["B101"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-format = true
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+extend-select = ['I']
+
+[tool.ruff.lint.isort]
+known-third-party = ["numpy", "pytest", "wandb", "torch"]
+known-first-party = ["nn_core"]
+known-local-folder = ["lightningsparseinst"]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.poetry]
 name = "lightningsparseinst"
@@ -45,7 +52,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11, <3.13"
 torch = "^2.5.0"
-nn-template-core = {git = "https://github.com/charitarthchugh/nn-template-core"} # use fork of nn-template-core to allow for newer versions of lightning
+nn-template-core = { git = "https://github.com/charitarthchugh/nn-template-core" } # use fork of nn-template-core to allow for newer versions of lightning
 lightning = "^2.4.0"
 hydra-core = "^1.3.2"
 wandb = "^0.18.5"
