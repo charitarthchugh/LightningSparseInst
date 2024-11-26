@@ -78,9 +78,7 @@ def run(cfg: DictConfig) -> str:
     model: pl.LightningModule = hydra.utils.instantiate(cfg.nn.module, _recursive_=False, metadata=metadata)
 
     # Instantiate the callbacks
-    template_core: NNTemplateCore = NNTemplateCore(
-        restore_cfg=cfg.train.get("restore", None),
-    )
+    template_core: NNTemplateCore = NNTemplateCore(restore_cfg=cfg.train.get("restore", None))
     callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
 
     storage_dir: str = cfg.core.storage_dir

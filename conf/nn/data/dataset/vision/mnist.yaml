@@ -3,9 +3,6 @@
 _target_: lightningsparseinst.utils.hf_io.load_hf_dataset
 name: "mnist"
 ref: "mnist"
-train_split: train
-# val_split: val
-val_percentage: 0.1
 test_split: test
 label_key: label
 data_key: image

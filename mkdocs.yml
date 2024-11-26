@@ -1,16 +1,13 @@
 site_name: lightningsparseinst
 site_description: SparseInst (CVPR 2022) in PyTorch Lightning
 repo_url: https://github.com/charitarthchugh/lightningsparseinst
-
 nav:
   - Home: index.md
-
 theme:
   name: material
   custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
-
   features:
     - content.code.annotate
     - navigation.indexes
@@ -23,11 +20,10 @@ theme:
     - search.highlight
     - search.share
     - search.suggest
-
   palette:
     - scheme: default
       primary: light green
-      accent:  green
+      accent: green
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
@@ -37,7 +33,6 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-
 # Extensions
 markdown_extensions:
   - abbr
@@ -70,15 +65,12 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
-
 extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-
 plugins:
   - search
-
 extra:
   version:
     provider: mike

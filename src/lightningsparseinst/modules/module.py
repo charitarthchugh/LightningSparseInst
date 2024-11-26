@@ -8,13 +8,7 @@ class CNN(nn.Module):
     def __init__(self, input_shape: Tuple[int], num_classes: int):
         super(CNN, self).__init__()
         self.model = nn.Sequential(
-            nn.Conv2d(
-                in_channels=input_shape[0],
-                out_channels=16,
-                kernel_size=5,
-                stride=1,
-                padding=2,
-            ),
+            nn.Conv2d(in_channels=input_shape[0], out_channels=16, kernel_size=5, stride=1, padding=2),
             nn.SiLU(),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(16, 32, 5, 1, 2),

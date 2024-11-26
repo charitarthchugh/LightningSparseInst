@@ -94,23 +94,12 @@ def cfg_fast_dev_run(cfg_simple_train: DictConfig) -> DictConfig:
 #
 # Training configurations aggregations
 #
-@pytest.fixture(
-    scope="package",
-    params=[
-        "cfg_simple_train",
-    ],
-)
+@pytest.fixture(scope="package", params=["cfg_simple_train"])
 def cfg_all_not_dry(request: FixtureRequest):
     return request.getfixturevalue(request.param)
 
 
-@pytest.fixture(
-    scope="package",
-    params=[
-        "cfg_simple_train",
-        "cfg_fast_dev_run",
-    ],
-)
+@pytest.fixture(scope="package", params=["cfg_simple_train", "cfg_fast_dev_run"])
 def cfg_all(request: FixtureRequest):
     return request.getfixturevalue(request.param)
 
@@ -118,16 +107,12 @@ def cfg_all(request: FixtureRequest):
 #
 # Training fixtures
 #
-@pytest.fixture(
-    scope="package",
-)
+@pytest.fixture(scope="package")
 def run_trainings_not_dry(cfg_all_not_dry: DictConfig) -> str:
     yield run(cfg=cfg_all_not_dry)
 
 
-@pytest.fixture(
-    scope="package",
-)
+@pytest.fixture(scope="package")
 def run_trainings(cfg_all: DictConfig) -> str:
     yield run(cfg=cfg_all)
 

@@ -1,7 +1,6 @@
 _target_: lightningsparseinst.pl_modules.pl_module.MyLightningModule
 x_key: ${conventions.x_key}
 y_key: ${conventions.y_key}
-
 defaults:
   - _self_
   - model: cnn

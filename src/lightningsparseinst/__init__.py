@@ -18,13 +18,7 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        NNRichHandler(
-            rich_tracebacks=True,
-            show_level=True,
-            show_path=True,
-            show_time=True,
-            omit_repeated_times=True,
-        )
+        NNRichHandler(rich_tracebacks=True, show_level=True, show_path=True, show_time=True, omit_repeated_times=True)
     ],
 )
 

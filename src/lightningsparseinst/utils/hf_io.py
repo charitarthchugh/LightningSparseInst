@@ -13,11 +13,7 @@ DatasetParams = namedtuple("DatasetParams", ["name", "fine_grained", "train_spli
 
 
 class HFTransform:
-    def __init__(
-        self,
-        key: str,
-        transform: Callable[[torch.Tensor], torch.Tensor],
-    ):
+    def __init__(self, key: str, transform: Callable[[torch.Tensor], torch.Tensor]):
         """Apply a row-wise transform to a dataset column.
 
         Args:
@@ -43,10 +39,7 @@ class HFTransform:
         return repr(self.transform)
 
 
-def preprocess_dataset(
-    dataset: Dataset,
-    cfg: Dict,
-) -> Dataset:
+def preprocess_dataset(dataset: Dataset, cfg: Dict) -> Dataset:
     """Preprocess a dataset.
 
     This function applies the following preprocessing steps:
@@ -104,50 +97,27 @@ def load_hf_dataset(**cfg: DictConfig) -> MetadataDatasetDict:
         Dataset: The loaded dataset.
     """
     dataset_params: DatasetParams = DatasetParams(
-        cfg["ref"],
-        None,
-        cfg["train_split"],
-        cfg["test_split"],
-        (cfg["ref"],),
+        cfg["ref"], None, cfg["train_split"], cfg["test_split"], (cfg["ref"],)
     )
     DATASET_KEY = "_".join(
-        map(
-            str,
-            [v for k, v in dataset_params._asdict().items() if k != "hf_key" and v is not None],
-        )
+        map(str, [v for k, v in dataset_params._asdict().items() if k != "hf_key" and v is not None])
     )
     DATASET_DIR: Path = PROJECT_ROOT / "data" / "datasets" / DATASET_KEY
 
     if not DATASET_DIR.exists():
-        train_dataset = load_dataset(
-            dataset_params.name,
-            split=dataset_params.train_split,
-            token=True,
-        )
+        train_dataset = load_dataset(dataset_params.name, split=dataset_params.train_split, token=True)
         if "val_percentage" in cfg:
             train_val_dataset = train_dataset.train_test_split(test_size=cfg["val_percentage"], shuffle=True)
             train_dataset = train_val_dataset["train"]
             val_dataset = train_val_dataset["test"]
         elif "val_split" in cfg:
-            val_dataset = load_dataset(
-                dataset_params.name,
-                split=cfg["val_split"],
-                token=True,
-            )
+            val_dataset = load_dataset(dataset_params.name, split=cfg["val_split"], token=True)
         else:
             raise RuntimeError("Either val_percentage or val_split must be specified in the config.")
 
-        test_dataset = load_dataset(
-            dataset_params.name,
-            split=dataset_params.test_split,
-            token=True,
-        )
+        test_dataset = load_dataset(dataset_params.name, split=dataset_params.test_split, token=True)
 
-        dataset: DatasetDict = MetadataDatasetDict(
-            train=train_dataset,
-            val=val_dataset,
-            test=test_dataset,
-        )
+        dataset: DatasetDict = MetadataDatasetDict(train=train_dataset, val=val_dataset, test=test_dataset)
 
         dataset = preprocess_dataset(dataset, cfg)
 

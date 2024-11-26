@@ -32,8 +32,7 @@ class MyLightningModule(pl.LightningModule):
 
         # example
         metric = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=len(metadata.class_vocab) if metadata is not None else None,
+            task="multiclass", num_classes=len(metadata.class_vocab) if metadata is not None else None
         )
         self.train_acc = metric.clone()
         self.val_acc = metric.clone()
@@ -65,13 +64,7 @@ class MyLightningModule(pl.LightningModule):
         metrics = getattr(self, f"{split}_acc")
         metrics.update(preds, gt_y)
 
-        self.log_dict(
-            {
-                f"acc/{split}": metrics,
-                f"loss/{split}": loss,
-            },
-            on_epoch=True,
-        )
+        self.log_dict({f"acc/{split}": metrics, f"loss/{split}": loss}, on_epoch=True)
 
         return {"logits": logits.detach(), "loss": loss}
 
@@ -84,9 +77,7 @@ class MyLightningModule(pl.LightningModule):
     def test_step(self, batch: Any, batch_idx: int) -> Mapping[str, Any]:
         return self._step(batch=batch, split="test")
 
-    def configure_optimizers(
-        self,
-    ) -> Union[Optimizer, Tuple[Sequence[Optimizer], Sequence[Any]]]:
+    def configure_optimizers(self) -> Union[Optimizer, Tuple[Sequence[Optimizer], Sequence[Any]]]:
         """Choose what optimizers and learning-rate schedulers to use in your optimization.
 
         Normally you'd need one. But in the case of GANs or similar you might have multiple.
