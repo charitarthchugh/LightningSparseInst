@@ -5,10 +5,10 @@ testpaths = ["tests"]
 
 [tool.coverage.report]
 exclude_lines = [
-    "raise NotImplementedError",
-    "raise NotImplementedError()",
-    "pragma: nocover",
-    "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+  "raise NotImplementedError()",
+  "pragma: nocover",
+  "if __name__ == .__main__.:",
 ]
 [tool.mypy]
 files = ["src/**/*.py", "test/*.py"]
@@ -48,6 +48,7 @@ description = "SparseInst (CVPR 2022) in PyTorch Lightning"
 authors = ["Charitarth Chugh <charitarth.chughg@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = true
 
 [tool.poetry.dependencies]
 python = "^3.11, <3.13"
@@ -60,6 +61,10 @@ torchmetrics = "^1.5.1"
 omegaconf = "^2.3.0"
 fiftyone = "^1.0.1"
 albumentations = "^1.4.21"
+opencv-python = "^4.10.0.84"
+orjson = "^3.10.12"
+lmdb = "^1.5.1"
+pycocotools = "^2.0.8"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,0 +1,21 @@
+_target_: lightningsparseinst.data.dataset.SegmentationDataset
+name: 'COCO-2017'
+ref: 'coco-2017' #controls its cache dir as well
+gt_field: 'ground_truth'
+detection_field: 'detections'
+max_detections: 100 # number used by DETR for coco. it is the max num images+slack
+split_names:
+  train: train
+  validation: validation
+  test: test
+transform:
+  _target_: albumentations.Compose
+  transforms:
+    - _target_: lightningsparseinst.utils.transforms.ResizeShortestEdge
+      shortest_max_size: [416, 448, 480, 512, 544, 576, 608, 640]
+      largest_max_size: 853
+    - _target_: albumentations.geometric.PadIfNeeded
+      min_width: 853 # max size of smallestmaxsize
+      min_height: 853
+      position: random # remove any bias in positioning
+    - _target_: albumentations.pytorch.ToTensorV2

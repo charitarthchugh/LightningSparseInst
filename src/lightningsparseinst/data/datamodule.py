@@ -18,6 +18,7 @@ from nn_core.common import PROJECT_ROOT
 from nn_core.nn_types import Split
 
 from lightningsparseinst.data.dataset import SegmentationDataset
+from lightningsparseinst.utils.fiftyone_io import LMDBDetectionDatasetExporter
 
 pylogger = logging.getLogger(__name__)
 
@@ -108,25 +109,32 @@ class DataModule(L.LightningDataModule):
         dataset: DictConfig,
         num_workers: DictConfig,
         batch_size: DictConfig,
-        split_names: DictConfig,
         accelerator: str,
+        cache_dir: str,
         # example
     ):
         super().__init__()
         self.dataset = dataset
         self.num_workers = num_workers
         self.batch_size = batch_size
-        self.split_names = split_names
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus
         self.pin_memory: bool = accelerator is not None and str(accelerator) == "gpu"
 
-        self.fiftyone_dataset: Optional[fo.Dataset] = None
-        self.classes: Optional[List[str] | str] = None
+        self.fiftyone_dataset: fo.Dataset = None
+        self.classes: List[str] | str = None
+        self.split_names: Mapping[str, str] = None
 
-        self.train_dataset: Optional[Dataset] = None
-        self.val_dataset: Optional[Dataset] = None
-        self.test_dataset: Optional[Dataset] = None
-        self.transform: Optional[Compose] = None
+        self.train_dataset: Dataset = None
+        self.val_dataset: Dataset = None
+        self.test_dataset: Dataset = None
+        self.transform: Compose = None
+
+        cache_dir = Path(cache_dir)
+        if not cache_dir.is_absolute():
+            cache_dir = PROJECT_ROOT / cache_dir
+
+        cache_dir.mkdir(exist_ok=True, parents=True)
+        self.cache_dir = cache_dir
 
     @cached_property
     def metadata(self) -> MetaData:
@@ -141,7 +149,7 @@ class DataModule(L.LightningDataModule):
         if self.train_dataset is None:
             self.setup(stage="fit")
 
-        return MetaData(class_vocab=self.train_dataset.labels_map_rev)
+        return MetaData(class_vocab=self.train_dataset.label_map_rv)
 
     def prepare_data(self) -> None:
         # download only\
@@ -150,6 +158,8 @@ class DataModule(L.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         self.fiftyone_dataset = fo.load_dataset(self.dataset.ref)
         self.fiftyone_dataset.compute_metadata()
+
+        self.split_names = self.dataset.split_names
 
         self.transform = hydra.utils.instantiate(self.dataset.transform)
         # Label filtering logic
@@ -168,34 +178,27 @@ class DataModule(L.LightningDataModule):
             self.classes = self.fiftyone_dataset.distinct(
                 f"{self.dataset.gt_field}.{self.dataset.detection_field}.label"
             )
-        # self.hf_datasets = hydra.utils.instantiate(self.dataset)
-        # self.hf_datasets.set_transform(self.transform)
-        #
-        # # Here you should instantiate your dataset, you may also split the train into train and validation if needed.
+
+        label_map_rv = {cls: idx for idx, cls in enumerate(self.classes)}
+        dataset_cache = self.cache_dir / self.dataset.ref
+        dataset_cache.mkdir(exist_ok=True, parents=True)
+
         if (stage is None or stage == "fit") and (self.train_dataset is None and self.val_dataset is None):
+            self._handle_lmdb_caching(dataset_cache, self.split_names["train"], label_map_rv)
             self.train_dataset = SegmentationDataset(
-                self.fiftyone_dataset,
-                split=self.split_names["train"],
-                gt_field=self.dataset.gt_field,
-                detection_field=self.dataset.detection_field,
+                dataset_cache / self.split_names["train"],
                 transform=self.transform,
-                max_num_instances_per_image=self.dataset.max_num_instances_per_image,
+                max_detections=self.dataset.max_detections,
             )
+            self._handle_lmdb_caching(dataset_cache, self.split_names["validation"], label_map_rv)
             self.val_dataset = SegmentationDataset(
-                self.fiftyone_dataset,
-                split=self.split_names["validation"],
-                gt_field=self.dataset.gt_field,
-                detection_field=self.dataset.detection_field,
-                max_num_instances_per_image=self.dataset.max_num_instances_per_image,
+                dataset_cache / self.split_names["validation"], max_detections=self.dataset.max_detections
             )
         #
         if stage is None or stage == "test":
+            self._handle_lmdb_caching(dataset_cache, self.split_names["test"], label_map_rv)
             self.test_dataset = SegmentationDataset(
-                self.fiftyone_dataset,
-                split=self.split_names["test"],
-                gt_field=self.dataset.gt_field,
-                detection_field=self.dataset.detection_field,
-                max_num_instances_per_image=self.dataset.max_num_instances_per_image,
+                dataset_cache / self.split_names["test"], max_detections=self.dataset.max_detections
             )
 
     def train_dataloader(self) -> DataLoader:
@@ -204,17 +207,17 @@ class DataModule(L.LightningDataModule):
             shuffle=True,
             batch_size=self.batch_size.train,
             num_workers=self.num_workers.train,
-            pin_memory=self.pin_memory,
+            # pin_memory=self.pin_memory,
             collate_fn=partial(collate_fn, split="train", metadata=self.metadata),
         )
 
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
-            self.val_dataset,
+            self.val_datasewt,
             shuffle=False,
             batch_size=self.batch_size.val,
             num_workers=self.num_workers.val,
-            pin_memory=self.pin_memory,
+            # pin_memory=self.pin_memory,
             collate_fn=partial(collate_fn, split="val", metadata=self.metadata),
         )
 
@@ -224,12 +227,27 @@ class DataModule(L.LightningDataModule):
             shuffle=False,
             batch_size=self.batch_size.test,
             num_workers=self.num_workers.test,
-            pin_memory=self.pin_memory,
+            # pin_memory=self.pin_memory,
             collate_fn=partial(collate_fn, split="test", metadata=self.metadata),
         )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(" f"{self.dataset=}, " f"{self.num_workers=}, " f"{self.batch_size=})"
+
+    def _handle_lmdb_caching(self, dataset_cache_path, split_name, label_map_rv) -> None:
+        split_cache_dir = dataset_cache_path / split_name
+
+        mdb_files = list(split_cache_dir.glob("*.mdb")) if split_cache_dir.exists() else None
+        if mdb_files:
+            pylogger.info(f"Found lmdb files in {split_name} cache directory: {mdb_files}")
+        else:
+            pylogger.info(f"Exporting lmdb files to {split_name} cache directory: {split_cache_dir}")
+            dataset_split = self.fiftyone_dataset.match_tags(split_name)
+            dataset_split.export(
+                dataset_exporter=LMDBDetectionDatasetExporter(
+                    export_dir=split_cache_dir, gt_field=self.dataset.gt_field, label_map_rv=label_map_rv
+                )
+            )
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="default", version_base="1.1")

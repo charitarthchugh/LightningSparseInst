@@ -1,0 +1,14 @@
+_target_: lightningsparseinst
+name: 'Cityscapes'
+ref: 'cityscapes'
+gt_field: 'gt_coarse'
+detection_field: 'polylines'
+train_split_name: 'train'
+validation_split_name: 'validation'
+test_split_name: 'test'
+classes: '^(?!out of roi$).*' # filtering out the
+transforms:
+  _target_: albumentations.Compose
+  transforms:
+    - _target_: albumentations.
+    - _target_:
