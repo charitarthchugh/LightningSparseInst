@@ -47,15 +47,9 @@ class ResizeShortestEdge(A.DualTransform):
             scale = largest_max_size / max(new_h, new_w)
             new_h = max(1, int(new_h * scale))
             new_w = max(1, int(new_w * scale))
-
-        # Resize image to new_h and new_w
         img_resized = cv2.resize(img, (new_w, new_h), interpolation=self.interpolation)
 
-        # Ensure consistent output size
-        final_h, final_w = largest_max_size, largest_max_size
-        img_final = cv2.resize(img_resized, (final_w, final_h), interpolation=self.interpolation)
-
-        return img_final
+        return img_resized
 
     def get_params(self):
         min_size = np.random.choice(self.shortest_max_size)
