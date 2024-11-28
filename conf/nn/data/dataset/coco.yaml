@@ -14,8 +14,4 @@ transform:
     - _target_: lightningsparseinst.utils.transforms.ResizeShortestEdge
       shortest_max_size: [416, 448, 480, 512, 544, 576, 608, 640]
       largest_max_size: 853
-    - _target_: albumentations.geometric.PadIfNeeded
-      min_width: 853 # max size of smallestmaxsize
-      min_height: 853
-      position: random # remove any bias in positioning
     - _target_: albumentations.pytorch.ToTensorV2

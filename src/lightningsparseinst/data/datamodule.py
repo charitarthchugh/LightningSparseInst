@@ -1,21 +1,21 @@
 import logging
-from functools import cached_property, partial
+from functools import cached_property
 from pathlib import Path
 from typing import List, Mapping, Optional
 
 import fiftyone as fo
 import hydra
 import lightning as L
+import lmdb
 import omegaconf
+import torch
 from albumentations import Compose
 from fiftyone import ViewField
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
-from torch.utils.data.dataloader import default_collate
 from tqdm import tqdm
 
 from nn_core.common import PROJECT_ROOT
-from nn_core.nn_types import Split
 
 from lightningsparseinst.data.dataset import SegmentationDataset
 from lightningsparseinst.utils.fiftyone_io import LMDBDetectionDatasetExporter
@@ -89,18 +89,14 @@ class MetaData:
         return f"{self.__class__.__name__}(\n    {attributes}\n)"
 
 
-def collate_fn(samples: List, split: Split, metadata: MetaData):
-    """Custom collate function for dataloaders with access to split and metadata.
+def collate_fn(batch):
+    return tuple(zip(*batch))
 
-    Args:
-        samples: A list of samples coming from the Dataset to be merged into a batch
-        split: The data split (e.g. train/val/test)
-        metadata: The MetaData instance coming from the DataModule or the restored checkpoint
 
-    Returns:
-        A batch generated from the given samples
-    """
-    return default_collate(samples)
+def worker_init_fn(worker_id):
+    worker_info = torch.utils.data.get_worker_info()
+    dataset: SegmentationDataset = worker_info.dataset
+    dataset.lmdb_conn = lmdb.open(str(dataset.lmdb_cache_dir), readonly=True, lock=False, max_readers=32)
 
 
 class DataModule(L.LightningDataModule):
@@ -207,18 +203,24 @@ class DataModule(L.LightningDataModule):
             shuffle=True,
             batch_size=self.batch_size.train,
             num_workers=self.num_workers.train,
-            # pin_memory=self.pin_memory,
-            collate_fn=partial(collate_fn, split="train", metadata=self.metadata),
+            pin_memory=self.pin_memory,
+            collate_fn=collate_fn,
+            persistent_workers=True,
+            prefetch_factor=16,
+            worker_init_fn=worker_init_fn,
         )
 
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
-            self.val_datasewt,
+            self.val_dataset,
             shuffle=False,
             batch_size=self.batch_size.val,
             num_workers=self.num_workers.val,
-            # pin_memory=self.pin_memory,
-            collate_fn=partial(collate_fn, split="val", metadata=self.metadata),
+            pin_memory=self.pin_memory,
+            persistent_workers=True,
+            prefetch_factor=16,
+            worker_init_fn=worker_init_fn,
+            collate_fn=collate_fn,
         )
 
     def test_dataloader(self) -> DataLoader:
@@ -227,8 +229,11 @@ class DataModule(L.LightningDataModule):
             shuffle=False,
             batch_size=self.batch_size.test,
             num_workers=self.num_workers.test,
-            # pin_memory=self.pin_memory,
-            collate_fn=partial(collate_fn, split="test", metadata=self.metadata),
+            pin_memory=self.pin_memory,
+            persistent_workers=True,
+            prefetch_factor=16,
+            worker_init_fn=worker_init_fn,
+            collate_fn=collate_fn,
         )
 
     def __repr__(self) -> str:
@@ -258,10 +263,11 @@ def main(cfg: omegaconf.DictConfig) -> None:
         cfg: the hydra configuration
     """
     m: L.LightningDataModule = hydra.utils.instantiate(cfg.nn.data, _recursive_=False)
+
     m.metadata
     m.setup()
 
-    for _ in tqdm(m.train_dataloader()):
+    for idx, _ in enumerate(tqdm(m.train_dataloader())):
         pass
 
 

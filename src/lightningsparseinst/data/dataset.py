@@ -51,12 +51,6 @@ class SegmentationDataset(Dataset):
         height, width = img.shape[:2]
         masks, labels = self.extract_masks_and_labels(img_data, height, width)
 
-        # Pad masks with empty masks and fill labels until max detections
-        if len(masks) < self.max_detections:
-            empty_mask = np.zeros((height, width), dtype=np.uint8)
-            masks.extend([empty_mask] * (self.max_detections - len(masks)))
-            labels.extend([-1] * (self.max_detections - len(labels)))
-
         transformed = self.transform(image=img, masks=masks)
 
         return transformed["image"], transformed["masks"], torch.tensor(labels)
