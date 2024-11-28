@@ -61,10 +61,11 @@ torchmetrics = "^1.5.1"
 omegaconf = "^2.3.0"
 fiftyone = "^1.0.1"
 albumentations = "^1.4.21"
-opencv-python = "^4.10.0.84"
 orjson = "^3.10.12"
 lmdb = "^1.5.1"
 pycocotools = "^2.0.8"
+pillow-simd = "^9.5.0.post2"
+opencv-contrib-python = "^4.10.0.84"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -72,6 +73,8 @@ ruff = "^0.6.4"
 isort = "^5.13.2"
 tqdm = "^4.66.5"
 cruft = "^2.15.0"
+yappi = "^1.6.10"
+pyinstrument = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
