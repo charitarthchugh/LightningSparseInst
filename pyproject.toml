@@ -66,6 +66,7 @@ lmdb = "^1.5.1"
 pycocotools = "^2.0.8"
 pillow-simd = "^9.5.0.post2"
 opencv-contrib-python = "^4.10.0.84"
+timm = "^1.0.11"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -75,6 +76,7 @@ tqdm = "^4.66.5"
 cruft = "^2.15.0"
 yappi = "^1.6.10"
 pyinstrument = "^5.0.0"
+ipywidgets = "^8.1.5"
 
 [build-system]
 requires = ["poetry-core"]
